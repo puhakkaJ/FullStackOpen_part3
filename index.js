@@ -2,7 +2,7 @@ const express = require('express')
 //const http = require('http')
 const cors = require('cors')
 
-var morgan = require('morgan')
+//var morgan = require('morgan')
 const app = express()
 
 const requestLogger = (request, response, next) => {
