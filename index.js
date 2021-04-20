@@ -13,10 +13,6 @@ const requestLogger = (request, response, next) => {
     next()
   }
   
-  morgan.token('type', (request, response) => {
-    const body = JSON.stringify(request.body)
-    return body
-  })
 
 app.use(express.json())
 //app.use(morgan(":method :url :status :res[content-length] - :response-time ms :type"))
