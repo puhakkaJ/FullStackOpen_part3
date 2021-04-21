@@ -17,9 +17,7 @@ const requestLogger = (request, response, next) => {
   }
   
 // ÄLÄ KOSKAAN TALLETA SALASANOJA githubiin! MUISTA POISTAA
-const url =
-  'mongodb+srv://fullstack34:Joona123@cluster0.hagmz.mongodb.net/phonebook_app?retryWrites=true&w=majority'
-    
+const url = process.env.MONGODB_URI   
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
   
 const personSchema = new mongoose.Schema({
