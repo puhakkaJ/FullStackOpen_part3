@@ -135,9 +135,9 @@ app.post('/api/persons', (request, response) => {
       number: body.number,
     }
 
-    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    Person.findByIdAndUpdate(request.params.id, person, { new: true})
     .then(updatedPerson => {
-      response.json(updatedPerson)
+      response.json(updatedPerson.toJSON)
     })
     .catch(error => next(error))
   })
