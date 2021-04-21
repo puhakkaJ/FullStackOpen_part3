@@ -85,7 +85,9 @@ let info = [
     }
 ]
 
-
+app.get('/', (request, response) => {
+    response.end("Homepage")
+})
 
 app.get('/api/persons', (request, response) => {
     Person.find({}).then(persons => {
@@ -128,14 +130,16 @@ app.post('/api/persons', (request, response) => {
       return response.status(400).json({ error: 'name or number cannot be missing' })
     }
   
-    const person = new Person({
+    const person = {
       name: body.name,
       number: body.number,
+    }
+
+    Note.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then(updatedPerson => {
+      response.json(updatedPerson)
     })
-  
-    person.save().then(savedPerson => {
-      response.json(savedPerson)
-    })
+    .catch(error => next(error))
   })
 
 const unknownEndpoint = (request, response) => {
