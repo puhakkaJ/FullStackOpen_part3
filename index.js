@@ -1,9 +1,12 @@
+require('dotenv').config()
+
 const express = require('express')
-//const http = require('http')
+const app = express()
+
 const cors = require('cors')
 
-//var morgan = require('morgan')
-const app = express()
+const mongoose = require('mongoose')
+const Person = require('./models/person')
 
 const requestLogger = (request, response, next) => {
     console.log('Method:', request.method)
@@ -13,13 +16,32 @@ const requestLogger = (request, response, next) => {
     next()
   }
   
+// ÄLÄ KOSKAAN TALLETA SALASANOJA githubiin! MUISTA POISTAA
+const url =
+  'mongodb+srv://fullstack34:Joona123@cluster0.hagmz.mongodb.net/phonebook_app?retryWrites=true&w=majority'
+    
+mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
+  
+const personSchema = new mongoose.Schema({
+    name: String,
+    number: String,
+})
+  
+personSchema.set('toJSON', {
+    transform: (document, returnedObject) => {
+      returnedObject.id = returnedObject._id.toString()
+      delete returnedObject._id
+      delete returnedObject.__v
+    }
+  })
+
 
 app.use(express.json())
 //app.use(morgan(":method :url :status :res[content-length] - :response-time ms :type"))
 app.use(cors())
 app.use(express.static('build'))
 
-let persons = [
+let people = [
     {
       id: 1,
       name: "Arto Hellas",
@@ -48,7 +70,7 @@ let persons = [
 
 let info = [
     {
-    title: `Phonebook has info for ${persons.length} people`,
+    title: `Phonebook has info for ${people.length} people`,
     date: new Date()
     }
 ]
@@ -56,7 +78,9 @@ let info = [
 
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(persons => {
+        response.json(persons)
+      })
 })
 
 app.get('/info', (request, response) => {
@@ -66,8 +90,14 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
+    Person.findById(request.params.id).then(person => {
+      response.json(person)
+    })
+  })
+
+/*app.get('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
+    const person = people.find(person => person.id === id)
     response.json(person)
 
     if (person) {
@@ -75,42 +105,33 @@ app.get('/api/persons/:id', (request, response) => {
       } else {
         response.status(404).end()
       }
-  })
+  })*/
 
 app.delete('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id)
-    persons = persons.filter(person => person.id !== id)
+    people = people.filter(person => person.id !== id)
   
     response.status(204).end()
   })
 
 app.post('/api/persons', (request, response) => {
-  const body = request.body
-
-  if (!body.name || !body.number) {
-    return response.status(400).json({ 
-      error: 'name or number cannot be missing' 
+    const body = request.body
+  
+    if (body.name === undefined || body.number === undefined) {
+      return response.status(400).json({ error: 'name or number cannot be missing' })
+    }
+  
+    const person = new Person({
+      name: body.name,
+      number: body.number,
     })
-  }
-
-  if (persons.map(person => person.name).includes(body.name)) {
-    return response.status(400).json({ 
-      error: 'name is already in the phonebook' 
+  
+    person.save().then(savedPerson => {
+      response.json(savedPerson)
     })
-  }
-
-  const person = {
-    id: Math.floor(Math.random() * 2000),
-    name: body.name,
-    number: body.number
-  }
-
-  persons = persons.concat(person)
-
-  response.json(person)
   })
 
-const port = process.env.PORT || 3001
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`)
-  })
+const PORT = process.env.PORT
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
