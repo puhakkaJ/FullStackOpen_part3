@@ -6,15 +6,6 @@ const Person = require('./models/person')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
-var uniqueValidator = require('mongoose-unique-validator');
-
-var personSchema = mongoose.Schema({
-    name: { type: String, minlength: 3, required: true, unique: true },
-    number: { type: String, minlength: 8, required: true },
-});
-
-// Apply the uniqueValidator plugin to userSchema.
-personSchema.plugin(uniqueValidator);
 
 app.use(express.static('build'))
 app.use(cors())
@@ -46,11 +37,7 @@ app.use(requestLogger)
 // ÄLÄ KOSKAAN TALLETA SALASANOJA githubiin! MUISTA POISTAA
 const url = process.env.MONGODB_URI   
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
-  
-/*const personSchema = new mongoose.Schema({
-    name: String,
-    number: String,
-})*/
+
 
 let info = [
     {
