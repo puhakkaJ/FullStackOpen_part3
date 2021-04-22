@@ -2,11 +2,19 @@ require('dotenv').config()
 
 const express = require('express')
 const app = express()
-
+const Person = require('./models/person')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
-const Person = require('./models/person')
+var uniqueValidator = require('mongoose-unique-validator');
+
+var personSchema = mongoose.Schema({
+    name: { type: String, minlength: 3, required: true, unique: true },
+    number: { type: String, minlength: 8, required: true },
+});
+
+// Apply the uniqueValidator plugin to userSchema.
+personSchema.plugin(uniqueValidator);
 
 app.use(express.static('build'))
 app.use(cors())
@@ -17,7 +25,10 @@ const errorHandler = (error, request, response, next) => {
   
     if (error.name === 'CastError') {
       return response.status(400).send({ error: 'malformatted id' })
-    }
+    } 
+    else if (error.name === 'ValidationError') {
+      return response.status(400).json({ error: error.message })
+  }
   
     next(error)
   }
@@ -32,59 +43,20 @@ const requestLogger = (request, response, next) => {
 
 app.use(requestLogger)
 
-  
 // ÄLÄ KOSKAAN TALLETA SALASANOJA githubiin! MUISTA POISTAA
 const url = process.env.MONGODB_URI   
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
   
-const personSchema = new mongoose.Schema({
+/*const personSchema = new mongoose.Schema({
     name: String,
     number: String,
-})
-  
-personSchema.set('toJSON', {
-    transform: (document, returnedObject) => {
-      returnedObject.id = returnedObject._id.toString()
-      delete returnedObject._id
-      delete returnedObject.__v
-    }
-  })
-
-
-let people = [
-    {
-      id: 1,
-      name: "Arto Hellas",
-      number: "040-123456",
-      //important: true
-    },
-    {
-      id: 2,
-      name: "Ada Lovelace",
-      number: "39-44-5323523",
-      //important: false
-    },
-    {
-      id: 3,
-      name: "Dan Abramov",
-      number: "12-43-234345",
-      //important: true
-    },
-    {
-        id: 4,
-        name: "Mary Poppendick",
-        number: "39-23-6423122",
-        //important: true
-      }
-  ]
+})*/
 
 let info = [
     {
-    title: `Phonebook has info for ${people.length} people`,
     date: new Date()
     }
 ]
-
 
 
 app.get('/api/persons', (request, response) => {
@@ -94,9 +66,11 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-    response.send(
-        `<p>${info[0].title}</p>
+    Person.find({}).then(result => {
+      response.send(
+        `<p>${`Phonebook has info for ${result.length} people`}</p>
          <p>${info[0].date}</p>`)
+      })
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
@@ -121,7 +95,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
   })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
     const body = request.body
   
     if (body.name === undefined || body.number === undefined) {
@@ -134,8 +108,11 @@ app.post('/api/persons', (request, response) => {
     })
   
     person.save().then(savedPerson => {
-      response.json(savedPerson)
+        return savedPerson.toJSON()
+    }).then(savedAndFormattedPerson => {
+        response.json(savedAndFormattedPerson)
     })
+    .catch(error => next(error))
   })
 
 app.put('/api/persons/:id', (request, response, next) => {
